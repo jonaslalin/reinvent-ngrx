@@ -1,7 +1,5 @@
 import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
-
 @Component({
   selector: 'app-root',
   template: `
@@ -43,14 +41,14 @@ import { map } from 'rxjs/operators';
               Truncate
             </button>
           </div>
-          <div *ngIf="notEmpty$ | async; else empty">
-            <ul class="list-group">
-              <li class="list-group-item" *ngFor="let item of stack$ | async">
+          <div *ngIf="stack$ | async as stack; else emptyStack">
+            <ul class="list-group" *ngIf="stack.length; else emptyStack">
+              <li class="list-group-item" *ngFor="let item of stack">
                 {{ item }}
               </li>
             </ul>
           </div>
-          <ng-template #empty>
+          <ng-template #emptyStack>
             <p class="card-text">The stack is empty.</p>
           </ng-template>
         </div>
@@ -60,14 +58,11 @@ import { map } from 'rxjs/operators';
 })
 export class AppComponent implements AfterViewInit {
   stack$: Observable<string[]>;
-  notEmpty$: Observable<boolean>;
   @ViewChild('newItem', { static: true })
   private newItem: ElementRef<HTMLInputElement>;
 
   constructor() {
     this.stack$ = of(['Item 3', 'Item 2', 'Item 1']);
-
-    this.notEmpty$ = this.stack$.pipe(map(stack => stack.length > 0));
   }
 
   ngAfterViewInit() {
