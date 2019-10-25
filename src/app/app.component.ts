@@ -72,6 +72,7 @@ export class AppComponent implements AfterViewInit {
 
   ngAfterViewInit() {
     this.newItem.nativeElement.focus();
+    this.newItem.nativeElement.value = 'Item 4';
   }
 
   push(newItem: string) {}
