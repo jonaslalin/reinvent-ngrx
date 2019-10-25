@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { Observable, of } from 'rxjs';
+
 @Component({
   selector: 'app-root',
   template: `
