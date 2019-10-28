@@ -1,5 +1,13 @@
-import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild
+} from '@angular/core';
+import { merge, Observable, Subject } from 'rxjs';
+import { map, mapTo, scan, startWith } from 'rxjs/operators';
+import { Action } from './action';
 
 @Component({
   selector: 'app-root',
@@ -36,10 +44,13 @@ import { Observable, of } from 'rxjs';
             </button>
             <button
               type="button"
-              class="btn btn-secondary"
+              class="btn btn-danger mr-2"
               (click)="truncate()"
             >
               Truncate
+            </button>
+            <button type="button" class="btn btn-danger" (click)="reset()">
+              Reset
             </button>
           </div>
           <div *ngIf="stack$ | async as stack; else emptyStack">
@@ -57,13 +68,37 @@ import { Observable, of } from 'rxjs';
     </div>
   `
 })
-export class AppComponent implements AfterViewInit {
+export class AppComponent implements OnInit, AfterViewInit {
   stack$: Observable<string[]>;
   @ViewChild('newItem', { static: true })
   private newItem: ElementRef<HTMLInputElement>;
 
-  constructor() {
-    this.stack$ = of(['Item 3', 'Item 2', 'Item 1']);
+  private initialState = ['Item 3', 'Item 2', 'Item 1'];
+  private push$ = new Subject<string>();
+  private pop$ = new Subject<void>();
+  private truncate$ = new Subject<void>();
+  private reset$ = new Subject<void>();
+  private action$: Observable<Action>;
+
+  constructor() {}
+
+  ngOnInit() {
+    this.action$ = merge(
+      this.push$.pipe(
+        startWith(...this.initialState.map((_, i, a) => a[a.length - i - 1])), // reverse
+        map(newItem => ({ type: '[Stack] Push', payload: newItem }))
+      ),
+      this.pop$.pipe(mapTo({ type: '[Stack] Pop' })),
+      this.truncate$.pipe(mapTo({ type: '[Stack] Truncate' })),
+      this.reset$.pipe(mapTo({ type: '[Stack] Reset' })) // can also initialize
+    );
+
+    this.stack$ = this.action$.pipe(
+      scan(
+        (state: string[], action: Action) => this.stackReducer(state, action),
+        []
+      )
+    );
   }
 
   ngAfterViewInit() {
@@ -71,9 +106,36 @@ export class AppComponent implements AfterViewInit {
     this.newItem.nativeElement.value = 'Item 4';
   }
 
-  push(newItem: string) {}
+  push(newItem: string) {
+    this.push$.next(newItem);
+  }
 
-  pop() {}
+  pop() {
+    this.pop$.next();
+  }
 
-  truncate() {}
+  truncate() {
+    this.truncate$.next();
+  }
+
+  reset() {
+    this.reset$.next();
+  }
+
+  private stackReducer(state: string[], action: Action) {
+    console.log('state:', state, 'action:', action);
+
+    switch (action.type) {
+      case '[Stack] Push':
+        return [action.payload, ...state];
+      case '[Stack] Pop':
+        return state.slice(1);
+      case '[Stack] Truncate':
+        return [];
+      case '[Stack] Reset':
+        return this.initialState;
+      default:
+        return state;
+    }
+  }
 }

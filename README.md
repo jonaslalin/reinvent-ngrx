@@ -1,3 +1,3 @@
 # Reinvent NgRx
 
-Demo of RxJS's powerful `scan` operator.
+In this project, RxJS's `scan` operator is used to showcase the Redux pattern.
